@@ -67,7 +67,7 @@ class EmailEngine extends Command
         // Validasi wajib
         if (empty($to) || empty($priority)) {
             $this->error("Field 'to' dan 'priority' wajib diisi.");
-            \Log::warning("Field 'to' dan/atau 'priority' kosong", $data);
+            Log::warning("Field 'to' dan/atau 'priority' kosong", $data);
             return;
         }
 

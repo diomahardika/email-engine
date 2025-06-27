@@ -1,0 +1,24 @@
+filebeat.inputs:
+  - type: filestream
+    id: laravel-email-logs
+    enabled: true
+    paths:
+      - /var/log/Laravel/email-*.log
+
+    parsers:
+      - ndjson:
+          target: ""
+          add_error_key: true
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+logging.json: true
+logging.metrics.enabled: false
+logging:
+  files:
+    rotateeverybytes: 12582912

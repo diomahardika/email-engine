@@ -1,0 +1,95 @@
+name: email-log-management
+
+networks:
+    elk-network:
+        driver: bridge
+
+volumes:
+    elastic-data-vl:
+    filebeat-data:
+
+services:
+    elasticsearch:
+        image: elasticsearch:8.11.1
+        container_name: elasticsearch
+        restart: always
+        volumes:
+            - elastic-data-vl:/usr/share/elasticsearch/data/
+        environment:
+            ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+            bootstrap.memory_lock: true
+            discovery.type: single-node
+            xpack.license.self_generated.type: basic
+            xpack.security.enabled: false
+        ports:
+            - "9200:9200"
+            - "9300:9300"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        networks:
+            - elk-network
+
+    logstash:
+        image: logstash:8.11.1
+        container_name: logstash
+        restart: always
+        volumes:
+            - ./logstash/:/logstash_dir:ro
+        command: logstash -f /logstash_dir/logstash.conf
+        depends_on:
+            - elasticsearch
+        ports:
+            - "5044:5044"
+            - "9600:9600"
+        environment:
+            LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+        networks:
+            - elk-network
+
+    kibana:
+        image: kibana:8.11.1
+        container_name: kibana
+        restart: always
+        ports:
+            - "5601:5601"
+        environment:
+            - ELASTICSEARCH_URL=http://elasticsearch:9200
+        depends_on:
+            - elasticsearch
+        networks:
+            - elk-network
+
+    filebeat:
+        image: elastic/filebeat:8.11.1
+        container_name: filebeat
+        restart: always
+        user: root
+        volumes:
+            - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+            - ./storage/logs:/var/log/Laravel:ro
+            - filebeat-data:/usr/share/filebeat/data/
+        depends_on:
+            - logstash
+        command:
+            - -e
+            - -c
+            - /usr/share/filebeat/filebeat.yml
+            - --strict.perms=false
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        networks:
+            - elk-network
+
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: rabbitmq
+        restart: always
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - elk-network
