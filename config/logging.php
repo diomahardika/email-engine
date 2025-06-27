@@ -4,9 +4,9 @@ use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use App\Services\CustomFormatter;
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Default Log Channel
@@ -51,6 +51,14 @@ return [
     */
 
     'channels' => [
+        'email' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/email.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+            'formatter' => CustomFormatter::class,
+        ],
 
         'stack' => [
             'driver' => 'stack',
@@ -89,7 +97,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
@@ -126,7 +134,5 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
-
     ],
-
 ];
